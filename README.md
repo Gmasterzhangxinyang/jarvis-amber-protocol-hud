@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="./banner.jpeg" alt="JARVIS Banner" width="95%" style="border-radius:12px; box-shadow:0 0 18px rgba(0,0,0,0.35);" />
+  <img src="./banner.jpeg" width="95%" style="border-radius:12px;" />
+</p>
+
+<p align="center">
+  <b>⚡ A Futuristic Browser HUD Inspired by Iron Man's JARVIS</b>
 </p>
 
 # JARVIS Amber Protocol HUD (Mk. XXII)
