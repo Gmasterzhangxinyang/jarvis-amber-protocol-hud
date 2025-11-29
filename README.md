@@ -1,12 +1,10 @@
-<p align="center">
-  <img src="./banner.jepg" alt="JARVIS Amber Protocol HUD Banner" style="width:100%; height:auto; aspect-ratio:5 / 1; object-fit:cover; border-radius:6px;" />
-</p>
-
 
 # JARVIS Amber Protocol HUD (Mk. XXII)
 A browser-based futuristic HUD inspired by Iron Man’s JARVIS system.
 一个基于浏览器实现的钢铁侠 JARVIS 风格 HUD 系统（Mk. XXII 琥珀协议）。
-
+<p align="center">
+  <img src="./banner.jpeg" alt="JARVIS Amber Protocol HUD Banner" width="100%">
+</p>
 ---
 
 ## ✨ Features | 功能特性
