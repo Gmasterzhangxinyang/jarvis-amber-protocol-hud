@@ -1,3 +1,5 @@
+![JARVIS Amber Protocol HUD Banner](./assets/banner.png)
+
 # JARVIS Amber Protocol HUD (Mk. XXII)
 A browser-based futuristic HUD inspired by Iron Man’s JARVIS system.
 一个基于浏览器实现的钢铁侠 JARVIS 风格 HUD 系统（Mk. XXII 琥珀协议）。
