@@ -1,13 +1,14 @@
+
+
 <p align="center">
   <img src="./banner.jpeg" alt="JARVIS Amber Protocol HUD Banner" width="80%">
 </p>
 
 <p align="center">
-  <strong>⚡ A Futuristic Browser HUD Inspired by Iron Man's JARVIS</strong>
-</p>
-<p align="center">
+  <strong>⚡ A Futuristic Browser HUD Inspired by Iron Man's JARVIS</strong><br>
   <sub>Gesture + voice control + satellite map + hand tracking HUD in your browser.</sub>
 </p>
+
 
 
 ---
