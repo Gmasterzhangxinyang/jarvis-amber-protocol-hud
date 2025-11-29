@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./banner.png" alt="JARVIS Amber Protocol HUD Banner" style="width:100%; height:auto; aspect-ratio:3 / 1; object-fit:cover; border-radius:6px;" />
+  <img src="./banner.png" alt="JARVIS Amber Protocol HUD Banner" style="width:100%; height:auto; aspect-ratio:4 / 1; object-fit:cover; border-radius:6px;" />
 </p>
 
 
