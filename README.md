@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="./banner.jpeg" alt="JARVIS Amber Protocol HUD Banner" width="85%" />
-</p>
-
-<p align="center"><b>⚡ A Futuristic Browser HUD Inspired by Iron Man's JARVIS</b></p>
-
 
 
 <p align="center">
@@ -16,9 +10,6 @@
 </p>
 
 ---
-
-# JARVIS Amber Protocol HUD (Mk. XXII)
-
 
 # JARVIS Amber Protocol HUD (Mk. XXII)
 A browser-based futuristic HUD inspired by Iron Man’s JARVIS system.
