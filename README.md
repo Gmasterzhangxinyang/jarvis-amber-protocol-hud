@@ -1,4 +1,4 @@
-![JARVIS Amber Protocol HUD Banner](./assets/banner.png)
+![JARVIS Amber Protocol HUD Banner](./banner.png)
 
 # JARVIS Amber Protocol HUD (Mk. XXII)
 A browser-based futuristic HUD inspired by Iron Man’s JARVIS system.
