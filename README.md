@@ -46,11 +46,15 @@ Browsers require HTTPS or localhost for camera/mic.
 浏览器要求通过 HTTPS 或 localhost 才能访问摄像头和麦克风。
 
 ### Recommended (Python)
+```bash
 cd project-folder
 python3 -m http.server 8000
+```
 
 Visit / 访问：
+```
 http://localhost:8000
+```
 
 ---
 
