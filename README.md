@@ -5,14 +5,9 @@
 <p align="center">
   <strong>⚡ A Futuristic Browser HUD Inspired by Iron Man's JARVIS</strong>
 </p>
-
 <p align="center">
   <sub>Gesture + voice control + satellite map + hand tracking HUD in your browser.</sub>
 </p>
-
----
-
-# JAR
 
 
 ---
