@@ -8,6 +8,8 @@
 A browser-based futuristic HUD inspired by Iron Man’s JARVIS system.
 一个基于浏览器实现的钢铁侠 JARVIS 风格 HUD 系统（Mk. XXII 琥珀协议）。
 
+---
+
 ## ✨ Features | 功能特性
 
 ### Real-time HUD Camera Overlay
