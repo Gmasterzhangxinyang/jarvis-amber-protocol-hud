@@ -39,17 +39,6 @@ Available commands 包含指令：
 
 ---
 
-## 📁 Project Structure | 项目结构
-
-jarvis-amber-protocol/
-│── index.html        (Main program HUD/UI/Map/Voice/Hands/Weather)
-│── README.md         (Documentation)
-└── assets/           (Optional images/icons folder)
-
-index.html contains all UI, logic, styles, and scripts.
-index.html 包含所有逻辑、界面与脚本。
-
----
 
 ## 🚀 How to Run | 本地运行方式
 
