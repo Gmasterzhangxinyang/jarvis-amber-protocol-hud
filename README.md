@@ -50,7 +50,7 @@ https://www.bilibili.com/video/BV1u6SJBhELj/
 - LLM AI 对话（像真正的 JARVIS 回应你）
 - 自动语音朗读（当前仅支持英文 TTS）
 - 支持 Dify 工作流导入
-- 可执行复杂任务 / 查询天气 / 回答问题
+- 可执行复杂任务 / 绑定个人知识库 / 回答问题
 
 **关键文件：**
 
