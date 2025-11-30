@@ -86,28 +86,75 @@ https://www.bilibili.com/video/BV1u6SJBhELj/
 
 ---
 
-## ② 配置 API
+## ② 配置 API （在jarvis-agent.html 内）
 
-打开：
+为了让 JARVIS 能正确调用你的 Dify 工作流，你需要在代码中填写自己的 **工作流 API 地址**与 **API Key**。
+
+打开文件：
 
 ```
 /jarvis agent/jarvis-agent.html
 ```
 
-搜索：
+搜索关键词：`DIFY_CONFIG`，你会看到如下结构：
 
 ```js
-const DIFY_API_URL
-const DIFY_API_KEY
+// === Dify 工作流配置（改成你自己的） ===
+const DIFY_CONFIG = {
+    // 1. Workflow API 调用地址（从 Dify → API 页面复制完整 URL）
+    endpoint: "https://api.dify.ai/v1/workflows/run",
+
+    // 2. 你的 API Key（从 Dify 设置中生成）
+    apiKey: "你的 API Key",
+
+    // 3. Workflow 输入变量名（例如你定义的 query）
+    inputKey: "query",
+
+    // 4. Workflow 输出变量名（通常是 reply）
+    outputKey: "reply"
+};
 ```
 
-填入你自己的 API 信息：
+---
+
+## 📌 **在哪里获取 API Key？**
+
+进入 Dify：
+
+**工作流 → 左侧菜单 “API Access” → 点击 API Key 弹窗**
+
+你会看到如下界面（示意图）：
+
+<p align="center">
+  <img src="./assets/dify-key.png" alt="Dify API Key Location" width="70%">
+</p>
+
+将这个 Key 复制到 `apiKey` 字段即可。
+
+---
+
+## 📌 **在哪里获取 Workflow API URL？**
+
+同样在 Dify 的 **API Access 页面**，找到：
+
+```
+Execute Workflow → POST 示例 → 完整 URL
+```
+
+复制完整 URL（包含 workflow ID），填入：
 
 ```js
-const DIFY_API_URL = "https://api.dify.ai/v1/workflows/<你的流程ID>/execute";
-const DIFY_API_KEY = "<你的Key>";
+endpoint: "<你的 workflow URL>"
 ```
 
+| 字段 | 说明 | 从哪里获取 |
+|------|------|-------------|
+| `endpoint` | 你的 Workflow 调用入口 URL | 如上 |
+| `apiKey` | 你的 Dify API Key | 如上 |
+| `inputKey` | Workflow 开头的输入变量名 | 你在流程里自己定义的，如 `query` |
+| `outputKey` | Workflow 结尾输出的变量名 | 结束节点字段，如 `reply` |
+
+修改完这四个字段后，JARVIS 才能连接你的 workflow，并实现真正的 AI 语音助手能力。
 ---
 
 ## ③ 工作流返回 JSON
