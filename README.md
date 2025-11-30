@@ -1,69 +1,118 @@
 <p align="center"> <img src="./assets/banner.jpeg" alt="JARVIS Amber Protocol HUD Banner" width="80%"> </p> <p align="center"> <strong>⚡ A Futuristic Browser HUD Inspired by Iron Man's JARVIS</strong><br> <sub>Gesture + Voice Control + Satellite Map + Hand Tracking + AI Agent</sub> </p>
 JARVIS Amber Protocol HUD (Mk. XXII)
 
-一个基于浏览器实现的钢铁侠 JARVIS 风格 HUD，可接入 AI Agent（Dify 工作流）。
+📦 项目版本说明 | Versions
 
-📦 Versions | 项目版本
+本项目包含 两个可运行版本：用于不同场景和扩展能力。
 
-本项目包含 两个独立可运行版本：
+1. jarvis-starter（基础 HUD 版本）
 
-1. jarvis-starter（基础版）
+纯前端 HUD 功能，包括：
 
-纯前端 HUD 功能版本：
+实时摄像头 HUD（Amber 风格滤镜）📦 项目版本说明 | Versions
 
-摄像头 HUD
+本项目包含 两个可运行版本：用于不同场景和扩展能力。
 
-手势识别（MediaPipe）
+1. jarvis-starter（基础 HUD 版本）
 
-卫星地图导航（Leaflet + Esri）
+纯前端 HUD 功能，包括：
 
-英文语音指令（Web Speech API）
+实时摄像头 HUD（Amber 风格滤镜）
 
-天气扫描（Open-Meteo）
-
-文件位置：
-
-/jarvis-starter/index.html
+适合 想看 HUD 效果、手势控制、地图导航 的用户。
 
 2. jarvis agent（AI Agent 版本）
 
-基于 Dify 工作流扩展的智能 JARVIS。
+可接入 Dify 工作流、LLM、知识库、工具调用 的 JARVIS 增强版。
 
-功能包含：
+新增能力：
 
-聊天式回应（英文语音回复）
+AI 对话能力（HUD 中可听见回复）
 
-可接入知识库 / 工具调用 / Workflow
+连接 Dify 工作流（Jarvis.yml）
 
-具备真正语义理解能力
+能回答任意问题、执行任务
 
-HUD 中实时朗读 Agent 回复内容
+自动 TTS 语音朗读（英文）
 
-文件位置：
+入口文件：
 
 /jarvis agent/jarvis-agent.html
 
-📌 该版本附带一个工作流导出文件：
+
+📌 该目录包含一个配置文件，可直接导入 Dify：
+
 /jarvis agent/Jarvis.yml
 
 
-你可以将该 Jarvis.yml 上传到 Dify，即可一键创建完整工作流。
+导入即可自动创建工作流。
 
-🔊 关于语音回复（重要）
+🔊 语音说明（重要）
+当前版本语音回复仅支持英文 TTS
 
-目前 JARVIS Agent 模式的语音输出 仅支持英文语音合成（TTS）
-因为：
+原因：
 
-Web Speech Synthesis API 的中文声音支持度不佳
+Web Speech Synthesis API 的中文发音支持度不稳定
 
-英文语音质量更自然、未来感更强
+英文 AI 声音更自然、更有 JARVIS 科幻感
 
-后续将在 Roadmap 中加入 Google TTS / Azure TTS 支持中文
+后续将加入 Google TTS / Azure TTS 以支持中文
 
-🚀 How to Run（本地运行）
+🤖 如何接入 Dify 工作流（AI Agent 模式）
+1. 导入工作流
 
-浏览器要求 HTTPS 或 localhost 才能访问摄像头 / 麦克风。
+进入 Dify：
 
+工作流 → 导入 → 选择 /jarvis agent/Jarvis.yml
+
+
+系统会自动生成：
+
+语音文本输入
+
+LLM 处理节点
+
+JSON 输出节点
+
+2. 在 HTML 中配置 Dify API
+
+打开：
+
+/jarvis agent/jarvis-agent.html
+
+
+找到以下内容：
+
+const DIFY_API_URL = "https://api.dify.ai/v1/workflows/你的流程ID/execute";
+const DIFY_API_KEY = "你的API Key";
+
+
+填写你自己的信息即可。
+
+3. 工作流需返回 JSON
+
+示例：
+
+{
+  "reply": "Sir, the weather today is sunny with a temperature of 22 degrees."
+}
+
+
+前端会自动：
+
+显示 HUD 回应文字
+
+英文语音朗读
+
+恢复自动监听
+
+🚀 本地运行方式（HTTPS/localhost）
+
+浏览器要求 localhost/HTTPS 才能访问摄像头与麦克风。
+
+推荐方式：
+
+cd project-folder
 python3 -m http.server 8000
 
 
@@ -71,52 +120,7 @@ python3 -m http.server 8000
 
 http://localhost:8000
 
-🤖 Dify Agent Integration 教程
-📌 1. 导入工作流
-
-进入 Dify → 工作流 → 导入 → 选择：
-
-/jarvis agent/Jarvis.yml
-
-
-导入后会自动生成：
-
-输入节点
-
-LLM 处理节点
-
-输出 JSON（给 HTML 使用）
-
-📌 2. 在 HTML 内填写 API Key
-
-打开：
-
-/jarvis agent/jarvis-agent.html
-
-
-找到以下模板并填写：
-
-const DIFY_API_URL = "https://api.dify.ai/v1/workflows/你的流程ID/execute";
-const DIFY_API_KEY = "你的API Key";
-
-📌 3. 工作流返回的数据示例
-
-工作流应返回结构：
-
-{
-  "reply": "Certainly sir, the weather today is sunny with 22 degrees."
-}
-
-
-系统将自动：
-
-展示 HUD reply
-
-使用英文 TTS 播放语音
-
-恢复自动监听
-
-🧩 Project Structure 项目结构
+🧩 项目结构（Project Structure）
 jarvis/
 │
 ├── jarvis-starter/
@@ -124,7 +128,7 @@ jarvis/
 │
 ├── jarvis agent/
 │   ├── jarvis-agent.html
-│   └── Jarvis.yml            ← Dify 工作流文件（可直接导入）
+│   └── Jarvis.yml     ← Dify 工作流配置文件
 │
 ├── assets/
 │   ├── banner.jpeg
@@ -134,34 +138,36 @@ jarvis/
 │
 └── README.md
 
-🛠 Roadmap（计划）
-✔ 已实现：
+🛠 Roadmap | 后续计划
+✔ 已完成
 
 HUD 摄像头增强
 
-手势控制（缩放/拖拽）
+手势控制
 
-卫星地图飞行动画
+卫星地图导航
 
-英文语音指令
+天气扫描
 
-HUD AI Agent 回答（英文语音）
+英文语音识别
 
-🔜 即将更新：
+Dify AI Agent 接入（英文 TTS）
 
-中文语音支持（ASR + TTS）
+🔜 即将更新
 
-HUD 物体识别框（YOLO）
+中文语音识别 & TTS
 
-AI 视觉问答（多模态）
+YOLO HUD 物体识别框
 
-AR 眼镜适配
+多模态视觉问答
 
-Jetson / Edge 部署优化
+Jetson / AR 眼镜适配
+
+UI HUD 动画增强
 
 👤 作者
 
 Created by Bobby
 GitHub: https://github.com/Gmasterzhangxinyang
 
-欢迎 PR / 合作。
+欢迎 PR、合作、扩展。
