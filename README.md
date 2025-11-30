@@ -204,7 +204,7 @@ jarvis/
 │
 ├── assets/
 │   ├── banner.jpeg
-│
+│   ├── dify-key.png
 └── README.md
 ```
 
