@@ -1,7 +1,7 @@
 
 
 <p align="center">
-  <img src="./banner.jpeg" alt="JARVIS Amber Protocol HUD Banner" width="80%">
+  <img src="./assets/banner.jpeg" alt="JARVIS Amber Protocol HUD Banner" width="80%">
 </p>
 
 <p align="center">
