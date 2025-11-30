@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. Mk. XXII - AMBER PROTOCOL</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- AI Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        /* --- AESTHETICS (ORANGE THEME) --- */
+        :root {
+            --arc-blue: #ffaa00; /* Amber Orange */
+            --arc-glow: #ffcc00; /* Bright Yellow-Orange */
+            --alert-red: #ff3300; /* Deep Red for alerts */
+            --glass-bg: rgba(20, 10, 0, 0.6);
+            --font-main: 'Segoe UI', 'Roboto Condensed', sans-serif;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: #000;
+            color: var(--arc-blue);
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh; width: 100vw;
+            user-select: none;
+            cursor: none;
+        }
+
+        /* --- LAYERS --- */
+        #cam-feed {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; transform: scaleX(-1);
+            z-index: 1; opacity: 1;
+            /* Camera filter: Darker, higher contrast, amber tint */
+            filter: contrast(1.4) brightness(0.5) sepia(1) hue-rotate(-10deg) saturate(2);
+        }
+
+        /* HAND CANVAS */
+        #hand-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 999; transform: scaleX(-1); pointer-events: none;
+        }
+
+        #vignette {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, transparent 40%, #000 120%);
+            z-index: 2; pointer-events: none;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+        }
+
+        /* --- UI CONTAINER --- */
+        #ui-layer {
+            position: relative; z-index: 10; width: 100%; height: 100%;
+            pointer-events: none;
+            perspective: 1200px;
+        }
+
+        /* --- WIDGETS --- */
+        .top-bar {
+            position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 40px; align-items: center;
+        }
+        .hud-tag {
+            font-size: 10px; letter-spacing: 3px; color: var(--arc-glow);
+            border-bottom: 2px solid var(--arc-blue); padding-bottom: 2px;
+            text-shadow: 0 0 10px var(--arc-blue);
+        }
+
+        .left-panel {
+            position: absolute; left: 50px; top: 15%;
+            transform: rotateY(15deg);
+            display: flex; flex-direction: column; gap: 15px;
+            width: 200px;
+        }
+        .stat-group { display: flex; flex-direction: column; gap: 5px; }
+        .bar-frame { width: 100%; height: 4px; background: rgba(255, 100, 0, 0.2); }
+        .bar-fill { height: 100%; background: var(--arc-blue); width: 0%; transition: width 0.5s; box-shadow: 0 0 8px var(--arc-blue); }
+        .bar-fill.active { width: 92%; animation: pulseBar 2s infinite; }
+        .label-text { font-size: 9px; color: var(--arc-blue); letter-spacing: 1px; font-weight: bold; }
+        .box-container { border: 1px solid var(--arc-blue); padding: 10px; background: rgba(50, 20, 0, 0.2); }
+
+        /* Weather Widget */
+        .weather-val { font-size: 18px; color: #fff; font-weight: bold; text-shadow: 0 0 10px var(--arc-glow); }
+        .weather-sub { font-size: 10px; color: var(--arc-blue); opacity: 0.8; }
+
+        /* Status Hex Dump */
+        #hex-dump {
+            font-family: monospace; font-size: 8px; color: rgba(255, 170, 0, 0.7);
+            line-height: 1.2; margin-top: 5px; height: 30px; overflow: hidden;
+        }
+
+        /* Right Radar */
+        .right-panel {
+            position: absolute; right: 60px; top: 20%;
+            width: 380px; height: 380px;
+            transform: rotateY(-15deg);
+            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            pointer-events: auto;
+        }
+
+        .right-panel.fullscreen {
+            top: 0; right: 0; bottom: 0; left: 0;
+            width: 100vw; height: 100vh;
+            transform: none; background: rgba(0,0,0,0.8);
+            z-index: 90;
+        }
+
+        #radar-housing {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--arc-blue);
+            position: relative; overflow: hidden;
+            background: rgba(20, 10, 0, 0.9);
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
+            transition: border-radius 0.5s;
+        }
+        .right-panel.fullscreen #radar-housing { border-radius: 0; border: none; }
+
+        #map-layer { width: 100%; height: 100%; opacity: 0; transition: opacity 1s; }
+        #map-layer.active { opacity: 1; }
+        #map { width: 100%; height: 100%; background: #000; }
+
+        /* ORANGE MONOCHROME MAP FILTER */
+        .leaflet-layer {
+            /* Intense Sepia/Orange Filter */
+            filter: grayscale(100%) sepia(100%) hue-rotate(-10deg) saturate(350%) contrast(1.1) brightness(0.9);
+            opacity: 0.9; 
+            transition: filter 1.5s ease;
+        }
+        
+        /* True Color Mode */
+        .leaflet-layer.true-color {
+            filter: none !important;
+            opacity: 1;
+        }
+
+        .leaflet-container { background: transparent !important; }
+        .leaflet-control-zoom { display: none; }
+
+        #radar-sweep {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            /* Orange Sweep Gradient */
+            background: conic-gradient(from 0deg, transparent 70%, rgba(255, 170, 0, 0.1) 90%, rgba(255, 200, 0, 0.6) 100%);
+            border-radius: 50%; animation: spin 4s linear infinite;
+            pointer-events: none; mix-blend-mode: screen; z-index: 10;
+        }
+        .right-panel.fullscreen #radar-sweep { display: none; }
+
+        /* Bottom Console */
+        .bottom-console {
+            position: absolute; bottom: 40px; left: 50px;
+            width: 300px; transform: rotateX(20deg);
+        }
+        #log-feed {
+            font-family: 'Consolas', monospace; font-size: 10px; color: rgba(255, 170, 0, 0.6);
+            height: 100px; overflow: hidden; display: flex; flex-direction: column-reverse;
+            text-shadow: 0 0 2px var(--arc-blue);
+        }
+        .msg-sys { color: var(--arc-glow); } .msg-usr { color: var(--alert-red); }
+
+        /* --- CURSOR --- */
+        #hand-cursor {
+            position: absolute; width: 40px; height: 40px;
+            border: 2px solid var(--arc-glow); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 2001;
+            display: none; box-shadow: 0 0 20px var(--arc-glow);
+            transition: width 0.1s, height 0.1s, border-color 0.1s;
+        }
+        #hand-cursor::after {
+            content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; 
+            background: #fff; transform: translate(-50%, -50%);
+        }
+        #hand-cursor.drag { border-color: var(--alert-red); width: 20px; height: 20px; background: rgba(255, 50, 0, 0.3); }
+        #hand-cursor.zoom { border-color: #fff; width: 70px; height: 70px; border-style: dashed; }
+
+        /* --- BOOT --- */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1s;
+        }
+        .boot-btn {
+            background: transparent; color: var(--arc-blue);
+            border: 2px solid var(--arc-blue); padding: 20px 60px;
+            font-size: 18px; letter-spacing: 5px; text-transform: uppercase;
+            cursor: pointer; box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
+            transition: all 0.3s;
+        }
+        .boot-btn:hover { background: var(--arc-blue); color: #000; box-shadow: 0 0 50px var(--arc-glow); }
+
+        @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes pulseBar { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; box-shadow: 0 0 15px var(--arc-glow); } }
+    </style>
+</head>
+<body>
+
+<video id="cam-feed" playsinline autoplay muted></video>
+<canvas id="hand-canvas"></canvas>
+<div id="vignette"></div>
+<div id="hand-cursor"></div>
+
+<div id="boot-screen">
+    <button class="boot-btn" id="start-btn" onclick="systemBoot()">INITIALIZE J.A.R.V.I.S.</button>
+    <div id="boot-log" style="margin-top:20px; font-size:12px; color:var(--arc-blue); display:none; text-align:center;">
+        LOADING CORE...
+    </div>
+</div>
+
+<div id="ui-layer">
+    <div class="top-bar">
+        <div class="hud-tag">MK. XXII</div>
+        <div class="hud-tag" id="sys-clock">00:00:00</div>
+        <div class="hud-tag">VOICE: <span id="voice-status" style="color:var(--alert-red)">OFFLINE</span></div>
+    </div>
+
+    <div class="left-panel">
+        <div class="stat-group">
+            <div class="label-text">ARC REACTOR</div>
+            <div class="bar-frame"><div class="bar-fill active" style="width:92%"></div></div>
+        </div>
+        
+        <div class="box-container">
+            <div class="label-text">HAND TRACKING</div>
+            <div id="hand-log" style="font-size:12px; color:#fff; margin-top:5px;">INITIALIZING...</div>
+        </div>
+
+        <!-- NEW STATUS WIDGET -->
+        <div class="box-container">
+            <div class="label-text" style="display:flex; justify-content:space-between;">
+                <span>SYSTEM DIAGNOSTICS</span>
+                <span style="color:var(--arc-glow)">RUNNING</span>
+            </div>
+            <div style="margin-top:5px; display:flex; gap:5px; align-items:center;">
+                <span style="font-size:9px; color:var(--arc-blue)">CPU</span>
+                <div class="bar-frame" style="width:60px;"><div id="cpu-bar" class="bar-fill" style="width:40%; box-shadow:none;"></div></div>
+                <span style="font-size:9px; color:var(--arc-blue)">NET</span>
+                <div class="bar-frame" style="width:60px;"><div id="net-bar" class="bar-fill" style="width:80%; box-shadow:none;"></div></div>
+            </div>
+            <div id="hex-dump"></div>
+        </div>
+
+        <div class="box-container" style="min-height: 60px;">
+            <div class="label-text">ATMOSPHERIC SENSORS</div>
+            <div id="weather-box" style="margin-top:5px; opacity: 0.5;">
+                <div id="weather-display" class="weather-val">--°</div>
+                <div id="weather-desc" class="weather-sub">STANDBY</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel" id="radar-panel">
+        <div id="radar-housing">
+            <div id="radar-sweep"></div>
+            <div id="map-layer">
+                <div id="map"></div>
+            </div>
+            <div style="position:absolute; bottom:20px; left:0; width:100%; text-align:center; font-size:12px; letter-spacing:2px; text-shadow:0 0 5px #000; pointer-events: none; color: var(--arc-blue);">
+                SATELLITE FEED
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-console">
+        <div class="label-text" style="border-bottom:1px solid var(--arc-blue); margin-bottom:5px;">SYSTEM LOG</div>
+        <div id="log-feed">
+            <div>[SYS] READY.</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    // --- CONFIG ---
+    const STATE = {
+        booted: false,
+        fullscreen: false,
+        speaking: false,
+        map: null,
+        detailedMode: false,
+        zoomLock: 0,
+        defaultLoc: [31.2304, 121.4737],
+        recognition: null
+    };
+
+    const CITIES = {
+        "shanghai": [31.2304, 121.4737], "beijing": [39.9042, 116.4074], "tokyo": [35.6762, 139.6503],
+        "new york": [40.7128, -74.0060], "london": [51.5074, -0.1278], "paris": [48.8566, 2.3522]
+    };
+
+    const WMO_CODES = {
+        0: "Clear Sky", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast",
+        45: "Fog", 48: "Depositing Rime Fog", 51: "Light Drizzle", 53: "Moderate Drizzle", 55: "Dense Drizzle",
+        61: "Slight Rain", 63: "Moderate Rain", 65: "Heavy Rain", 71: "Slight Snow", 73: "Moderate Snow", 
+        75: "Heavy Snow", 95: "Thunderstorm", 96: "Thunderstorm with Hail", 99: "Heavy Hailstorm"
+    };
+
+    // --- BOOT ---
+    async function systemBoot() {
+        if(STATE.booted) return;
+        
+        const btn = document.getElementById('start-btn');
+        const log = document.getElementById('boot-log');
+        btn.style.display = 'none';
+        log.style.display = 'block';
+
+        // 1. Camera & AI
+        log.innerText = "ACCESSING OPTICAL SENSORS...";
+        await startCamera();
+        
+        log.innerText = "LOADING NEURAL NETWORK...";
+        await initHands();
+
+        // 2. Map & Voice
+        initMap();
+        startVoiceLoop(); 
+        initClock();
+        startStatusSim(); // Start the hex dump simulation
+
+        // 3. UI Reveal
+        setTimeout(() => {
+            const screen = document.getElementById('boot-screen');
+            screen.style.opacity = '0';
+            setTimeout(() => screen.remove(), 1000);
+            
+            STATE.booted = true;
+            document.getElementById('map-layer').classList.add('active');
+            
+            speak("System online. Amber protocol initiated.");
+            sysLog("TRY: 'DETAILED IMAGE' OR 'CHECK WEATHER'", "SYS");
+            
+            setTimeout(() => { if(STATE.map) STATE.map.invalidateSize(); }, 800);
+        }, 1000);
+    }
+
+    // --- MAP ---
+    function initMap() {
+        if(STATE.map) return;
+        STATE.map = L.map('map', { zoomControl: false, attributionControl: false, center: STATE.defaultLoc, zoom: 13 });
+        
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19, attribution: 'Esri'
+        }).addTo(STATE.map);
+        
+        L.circleMarker(STATE.defaultLoc, { radius: 8, color: '#ffaa00', fillColor: 'transparent', weight: 2 }).addTo(STATE.map);
+    }
+
+    function toggleFullscreen(enable) {
+        const panel = document.getElementById('radar-panel');
+        if(enable) {
+            panel.classList.add('fullscreen');
+            STATE.fullscreen = true;
+            speak("Maximizing.");
+        } else {
+            panel.classList.remove('fullscreen');
+            STATE.fullscreen = false;
+            speak("Minimizing.");
+        }
+        setTimeout(() => { if(STATE.map) STATE.map.invalidateSize(); }, 500);
+    }
+
+    function toggleDetailedImage(enable) {
+        const tiles = document.querySelectorAll('.leaflet-layer');
+        STATE.detailedMode = enable;
+        
+        tiles.forEach(t => {
+            if(enable) t.classList.add('true-color');
+            else t.classList.remove('true-color');
+        });
+
+        if(enable) {
+            speak("Enhancing visual feed.");
+            sysLog("VISUALS: ENHANCED", "SYS");
+        } else {
+            speak("Restoring amber protocol.");
+            sysLog("VISUALS: STANDARD", "SYS");
+        }
+    }
+
+    async function checkWeather() {
+        if(!STATE.map) return;
+        const center = STATE.map.getCenter();
+        const lat = center.lat.toFixed(2);
+        const lng = center.lng.toFixed(2);
+        
+        sysLog(`SCANNING ATMOSPHERE...`, "SYS");
+        speak("Scanning atmospheric conditions.");
+
+        try {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if(data.current_weather) {
+                const temp = data.current_weather.temperature;
+                const code = data.current_weather.weathercode;
+                const desc = WMO_CODES[code] || "Unknown";
+                
+                const box = document.getElementById('weather-box');
+                const disp = document.getElementById('weather-display');
+                const sub = document.getElementById('weather-desc');
+                
+                box.style.opacity = '1';
+                box.style.border = '1px solid #fff';
+                disp.innerText = `${temp}°C`;
+                sub.innerText = desc.toUpperCase();
+
+                speak(`Temperature is ${temp} degrees celsius. Conditions are ${desc}.`);
+                sysLog(`TEMP: ${temp}C | ${desc.toUpperCase()}`, "DAT");
+            }
+        } catch(e) {
+            console.error(e);
+            speak("Unable to connect to weather satellites.");
+            sysLog("WEATHER DATA ERROR", "ERR");
+        }
+    }
+
+    function goToLocation(city) {
+        const coords = CITIES[city.toLowerCase()];
+        if(coords) {
+            speak("Routing to " + city);
+            STATE.map.flyTo(coords, 13, { duration: 2.5 });
+            sysLog("NAV: " + city.toUpperCase(), "SYS");
+        } else {
+            speak("Unknown location.");
+        }
+    }
+
+    // --- SIMULATION & UTILS ---
+    function startStatusSim() {
+        const hex = document.getElementById('hex-dump');
+        const cpu = document.getElementById('cpu-bar');
+        const net = document.getElementById('net-bar');
+        
+        setInterval(() => {
+            // Hex dump
+            const newHex = Math.random().toString(16).substring(2, 10).toUpperCase();
+            hex.innerText = `0x${newHex} :: MEM_ALLOC\n` + hex.innerText.substring(0, 100);
+            
+            // Random bar movement
+            cpu.style.width = Math.floor(Math.random() * 60 + 20) + '%';
+            net.style.width = Math.floor(Math.random() * 40 + 50) + '%';
+        }, 300);
+    }
+
+    function initClock() {
+        setInterval(() => {
+            const d = new Date();
+            document.getElementById('sys-clock').innerText = d.toLocaleTimeString('en-US', {hour12:false});
+        }, 1000);
+    }
+
+    function sysLog(msg, type) {
+        const feed = document.getElementById('log-feed');
+        const line = document.createElement('div');
+        line.className = type === 'SYS' ? 'msg-sys' : 'msg-usr';
+        line.innerText = `[${type}] ${msg}`;
+        feed.prepend(line);
+        if(feed.children.length > 5) feed.lastChild.remove();
+    }
+
+    // --- VOICE ---
+    function startVoiceLoop() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!SR) { sysLog("VOICE ERROR", "ERR"); return; }
+        
+        STATE.recognition = new SR();
+        STATE.recognition.continuous = false; 
+        STATE.recognition.lang = 'en-US';
+        STATE.recognition.interimResults = false;
+
+        STATE.recognition.onstart = () => {
+            const v = document.getElementById('voice-status');
+            v.innerText = "LISTENING";
+            v.style.color = "#ffaa00"; // Orange
+        };
+
+        STATE.recognition.onend = () => {
+            const v = document.getElementById('voice-status');
+            v.innerText = "STANDBY";
+            v.style.color = "#ff3300"; // Red
+            if (STATE.booted && !STATE.speaking) {
+                setTimeout(() => { try { STATE.recognition.start(); } catch(e){} }, 200);
+            }
+        };
+
+        STATE.recognition.onresult = (event) => {
+            processCommand(event.results[0][0].transcript.toLowerCase());
+        };
+
+        try { STATE.recognition.start(); } catch(e) {}
+    }
+
+    function processCommand(cmd) {
+        sysLog(cmd.toUpperCase(), "USR");
+        
+        if(cmd.includes('open map')) { document.getElementById('map-layer').classList.add('active'); speak("Map on."); }
+        if(cmd.includes('close map')) { document.getElementById('map-layer').classList.remove('active'); speak("Map off."); }
+        if(cmd.includes('full screen') || cmd.includes('maximize')) toggleFullscreen(true);
+        if(cmd.includes('minimize') || cmd.includes('standard')) toggleFullscreen(false);
+        if(cmd.includes('zoom in') || cmd.includes('enhance')) STATE.map.zoomIn();
+        if(cmd.includes('zoom out')) STATE.map.zoomOut();
+        
+        if(cmd.includes('go to')) {
+            for(let city in CITIES) { if(cmd.includes(city)) { goToLocation(city); break; } }
+        }
+        if(cmd.includes('reset')) { STATE.map.setView(STATE.defaultLoc, 13); speak("Reset."); }
+
+        if(cmd.includes('detailed image') || cmd.includes('color mode') || cmd.includes('remove filter')) toggleDetailedImage(true);
+        if(cmd.includes('standard view') || cmd.includes('orange mode') || cmd.includes('tactical')) toggleDetailedImage(false);
+        if(cmd.includes('check weather') || cmd.includes('weather report') || cmd.includes('conditions')) checkWeather();
+    }
+
+    function speak(text) {
+        if(!window.speechSynthesis) return;
+        if (STATE.recognition) try { STATE.recognition.stop(); } catch(e){}
+        STATE.speaking = true;
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US'; u.pitch = 0.9; u.rate = 1.1;
+        u.onend = () => { STATE.speaking = false; if (STATE.booted) try { STATE.recognition.start(); } catch(e){} };
+        window.speechSynthesis.speak(u);
+        sysLog(text, "JARVIS");
+    }
+
+    // --- CAMERA & HANDS ---
+    let videoElement, canvasElement, canvasCtx;
+    let hands;
+    let handMode = 'HOVER';
+    let lastHandX=0, lastHandY=0, zoomRefY=0;
+
+    async function startCamera() {
+        videoElement = document.getElementById('cam-feed');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+        videoElement.srcObject = stream;
+        return new Promise(resolve => videoElement.onloadedmetadata = () => {
+            videoElement.play();
+            resolve();
+        });
+    }
+
+    async function initHands() {
+        canvasElement = document.getElementById('hand-canvas');
+        canvasCtx = canvasElement.getContext('2d');
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+        
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        
+        hands.onResults(onHandResults);
+
+        const detectFrame = async () => {
+            if (!STATE.booted && !document.getElementById('boot-log').offsetParent) {}
+            await hands.send({image: videoElement});
+            requestAnimationFrame(detectFrame);
+        };
+        detectFrame();
+    }
+
+    function resizeCanvas() {
+        canvasElement.width = window.innerWidth;
+        canvasElement.height = window.innerHeight;
+    }
+
+    function drawLine(ctx, lm, i, j) {
+        const p1 = lm[i]; const p2 = lm[j];
+        ctx.beginPath();
+        ctx.moveTo(p1.x * ctx.canvas.width, p1.y * ctx.canvas.height);
+        ctx.lineTo(p2.x * ctx.canvas.width, p2.y * ctx.canvas.height);
+        ctx.stroke();
+    }
+
+    function onHandResults(results) {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        const cursor = document.getElementById('hand-cursor');
+        const log = document.getElementById('hand-log');
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            log.innerText = "ONLINE";
+            log.style.color = "#ffaa00"; // Orange
+            cursor.style.display = 'block';
+
+            canvasCtx.strokeStyle = "#ffaa00"; // Orange Skeleton
+            canvasCtx.lineWidth = 3;
+            for (const lm of results.multiHandLandmarks) {
+                drawLine(canvasCtx, lm, 0, 1); drawLine(canvasCtx, lm, 1, 2); drawLine(canvasCtx, lm, 2, 3); drawLine(canvasCtx, lm, 3, 4);
+                drawLine(canvasCtx, lm, 0, 5); drawLine(canvasCtx, lm, 5, 6); drawLine(canvasCtx, lm, 6, 7); drawLine(canvasCtx, lm, 7, 8);
+                drawLine(canvasCtx, lm, 0, 9); drawLine(canvasCtx, lm, 9, 10); drawLine(canvasCtx, lm, 10, 11); drawLine(canvasCtx, lm, 11, 12);
+                drawLine(canvasCtx, lm, 0, 13); drawLine(canvasCtx, lm, 13, 14); drawLine(canvasCtx, lm, 14, 15); drawLine(canvasCtx, lm, 15, 16);
+                drawLine(canvasCtx, lm, 0, 17); drawLine(canvasCtx, lm, 17, 18); drawLine(canvasCtx, lm, 18, 19); drawLine(canvasCtx, lm, 19, 20);
+                drawLine(canvasCtx, lm, 5, 9); drawLine(canvasCtx, lm, 9, 13); drawLine(canvasCtx, lm, 13, 17); drawLine(canvasCtx, lm, 0, 17);
+            }
+
+            const lm = results.multiHandLandmarks[0];
+            const index = lm[8]; const thumb = lm[4];
+            const x = (1 - index.x) * window.innerWidth;
+            const y = index.y * window.innerHeight;
+            
+            cursor.style.left = x + 'px';
+            cursor.style.top = y + 'px';
+
+            const dist = Math.hypot(index.x - thumb.x, index.y - thumb.y);
+
+            if (dist < 0.05) { // Pinch
+                cursor.className = 'drag';
+                if(handMode !== 'DRAG') { handMode = 'DRAG'; lastHandX = x; lastHandY = y; }
+                if(STATE.map) {
+                    const dx = x - lastHandX;
+                    const dy = y - lastHandY;
+                    STATE.map.panBy([-dx, -dy], {animate: false});
+                    lastHandX = x; lastHandY = y;
+                }
+            } else if (dist > 0.15) { // Open
+                cursor.className = 'zoom';
+                if(handMode !== 'ZOOM') { handMode = 'ZOOM'; zoomRefY = y; }
+                if(Date.now() > STATE.zoomLock) {
+                    const dy = zoomRefY - y;
+                    if(Math.abs(dy) > 40) {
+                        const dir = dy > 0 ? 1 : -1;
+                        STATE.map.setZoom(STATE.map.getZoom() + dir);
+                        zoomRefY = y;
+                        STATE.zoomLock = Date.now() + 500;
+                    }
+                }
+            } else {
+                cursor.className = '';
+                handMode = 'HOVER';
+            }
+
+        } else {
+            cursor.style.display = 'none';
+            log.innerText = "SCANNING...";
+            log.style.color = "#fff";
+        }
+    }
+</script>
+</body>
+</html>
