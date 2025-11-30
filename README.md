@@ -159,11 +159,11 @@ endpoint: "<你的 workflow URL>"
 
 ## ③ 工作流返回 JSON
 
-AI 最终响应需返回：
+AI 最终响应需返回一段文字，例如：
 
 ```json
 {
-  "reply": "Sir, the system is now online and fully operational."
+  "reply": "I've analyzed your surroundings. No threats detected within a 50-meter radius. Ambient noise level is nominal."
 }
 ```
 
