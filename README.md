@@ -10,8 +10,11 @@
 ---
 
 # JARVIS Amber Protocol HUD (Mk. XXII)
-一个基于浏览器实现的钢铁侠 JARVIS 琥珀协议 HUD，可扩展语音、手势、地图、天气与 AI 智能助手。
 
+一个基于浏览器的 **全息 HUD 交互系统**，融合了实时视觉、手势追踪、语音识别、卫星地图与 AI Agent 能力，构建沉浸式的 JARVIS 式人机界面。
+
+🎬 **演示视频（Bilibili）：**  
+https://www.bilibili.com/video/BV1u6SJBhELj/
 ---
 
 # 📦 项目版本说明 | Versions
