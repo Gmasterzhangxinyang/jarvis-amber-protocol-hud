@@ -61,7 +61,7 @@ https://www.bilibili.com/video/BV1u6SJBhELj/
 
 ---
 
-# 🔊 语音说明（重要）
+# 🔊 语音说明
 
 - **当前版本仅支持英文语音回复（TTS）**
 - 中文 TTS 版本将在未来更新加入
